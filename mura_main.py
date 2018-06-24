@@ -1,5 +1,5 @@
 from easydict import EasyDict
-from model.models import ModelFarm
+from model.models import ModelFactory
 
 
 farm = ModelFactory(model_names=['resnet', 'densenet'], num_clasess=2)
