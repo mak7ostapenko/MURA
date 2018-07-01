@@ -8,6 +8,7 @@ class ModelFactory():
 
     def add_model(self, name, height, widht, weights, include_top):
         """
+        Create a model to a factory
 
         Arguments:
             name - name of a model, which will be created,
