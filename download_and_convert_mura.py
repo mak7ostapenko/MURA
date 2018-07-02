@@ -1,4 +1,4 @@
-# the dataloader taken from:
+# the file from:
 # https://github.com/desimone/Musculoskeletal-Radiographs-Abnormality-Classifier/blob/master/download_and_convert_mura.py
 
 

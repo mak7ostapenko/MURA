@@ -65,7 +65,7 @@ class Model():
         return model
 
 
-    def train(self):
+    def train(self, train_datagen, val_datagen):
         """
 
         Arguments:
@@ -78,6 +78,18 @@ class Model():
 
 
     def validate(self):
+        """
+
+        Arguments:
+
+
+        Returns:
+
+        """
+        pass
+
+
+    def summary(self):
         """
 
         Arguments:

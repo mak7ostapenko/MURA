@@ -1,5 +1,10 @@
 from models import Model
 
+import keras
+from keras.preprocessing.image import ImageDataGenerator
+
+
+
 class ModelFactory():
     def __init__(self, model_names, num_classes):
         self.model_names = model_names
@@ -55,7 +60,47 @@ class ModelFactory():
         return model_dict
 
 
-    def train_factory(self):
+
+    def get_datagen(self, params):
+        """
+
+        Arguments:
+
+
+        Returns:
+
+        """
+        datagen_param = params.datagen
+        gen_param = params.generator
+        datagen = ImageDataGenerator(**datagen_param)
+        generator = datagen.flow_from_directory(**gen_param)
+
+        return generator
+
+
+
+    def train_factory(self, model_dict, train_param=None):
+        """
+
+        Arguments:
+
+
+        Returns:
+
+        """
+        train_gen_params = train_param.datagenerator.train
+        train_generator = self.get_datagen(train_gen_params)
+        val_gen_param = train_param.datagenerator.val
+        val_generator = self.get_datagen(val_gen_param)
+
+        for model_name in model_dict.keys():
+            model_dict[model_name].train()
+
+
+            print('model have done training ', model_name)
+
+
+    def factory_summary(self):
         """
 
         Arguments:
@@ -67,13 +112,3 @@ class ModelFactory():
         pass
 
 
-    def validate_factory(self):
-        """
-
-        Arguments:
-
-
-        Returns:
-
-        """
-        pass
