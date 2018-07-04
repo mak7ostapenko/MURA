@@ -96,7 +96,6 @@ class ModelFactory():
         for model_name in model_dict.keys():
             model_dict[model_name].train()
 
-            model_dict[model_name].summary()
 
 
     def factory_summary(self):
