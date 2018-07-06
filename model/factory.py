@@ -1,8 +1,5 @@
 from models import Model
-
 import keras
-from keras.preprocessing.image import ImageDataGenerator
-
 
 
 class ModelFactory():
