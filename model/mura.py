@@ -97,7 +97,6 @@ class Mura(object):
         encounter_metrics['precision_score'] = precision_score(y_true, y_pred)
         encounter_metrics['recall_score'] = recall_score(y_true, y_pred)
         encounter_metrics['cohen_kappa_score'] = cohen_kappa_score(self.y_true, self.y_pred)
-
         return encounter_metrics
 
     def metrics_by_study_type(self):
@@ -109,7 +108,6 @@ class Mura(object):
         study_type_metrics['precision_score'] = precision_score(y_true, y_pred)
         study_type_metrics['recall_score'] = recall_score(y_true, y_pred)
         study_type_metrics['cohen_kappa_score'] = cohen_kappa_score(self.y_true, self.y_pred)
-
         return study_type_metrics
 
 

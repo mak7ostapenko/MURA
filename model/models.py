@@ -1,27 +1,33 @@
 from keras.applications.resnet50 import ResNet50
 from keras.applications.densenet import DenseNet121
 from keras.models import Model
-from tf.contrib.keras.optimizers import Adam, RMSprop
+from keras.optimizers import Adam, RMSprop
 from keras.layers import Input, Dense
 from keras.callbacks import (ModelCheckpoint, TensorBoard)
-from keras.optimizer import Adam
-from sklearn.utils import class_weight
 import numpy as np
-from utils import get_datagen,class_weights
-from mura import Mura
+from model.utils import data_gen, class_weights
+from model.mura import Mura
 
 
 class TuneModel:
-    def __init__(self, base_model_name, num_classes, height, width, weights='imagenet', include_top=False):
-        self.name = base_model_name
-        self.num_classes = num_classes
+    def __init__(self, base_model, name, width, height, channels,
+                 include_top=False, weights='imagenet', classes=2, model_trained=False):
+        self.name = name
+        self.classes = classes
         self.height = height
         self.width = width
+        self.channels = channels
         self.include_top = include_top
         self.weights = weights
+        self.model_trained = model_trained
+
+        input_tensor = Input(shape=(self.height, self.width, self.channels))
+        self.base_model = base_model(input_tensor=input_tensor, include_top=self.include_top,
+                                     weights=self.weights, classes=self.classes)
+
         self.start_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z')
 
-    def tune_architecture(self, base_model):
+    def tune_architecture(self):
         """
         Tune base model architecture
 
@@ -32,11 +38,11 @@ class TuneModel:
            Tuned model with new layers
 
         """
-        x = base_model.output
+        x = self.base_model.output
         predictions = Dense(self.num_classes, activation='sigmoid', name='predictions')(x)
-        tuned_model = Model(base_model.input, predictions)
+        model = Model(self.base_model.input, predictions)
 
-        return tuned_model
+        return model
 
     def get_callbacks(self):
         """
@@ -53,7 +59,7 @@ class TuneModel:
         tensor_board = TensorBoard(log_dir='./logs/{}/{}/'.format(self.name, self.start_time))
         return [checkpoint, tensor_board]
 
-    def train(self, train_params):
+    def train(self, train_params, gen_params):
         """
         Train model
 
@@ -64,17 +70,20 @@ class TuneModel:
             History of model training
 
         """
+        train_generator = get_datagen(gen_params.train)
+        val_generator = get_datagen(gen_params.val)
+
         callbacks = self.get_callbacks()
         weights = class_weight(self.train_generator.classes)
 
-        train_history = self.tuned_model.fit_generator(
-            generator=self.train_generator,
-            steps_per_epoch=len(self.train_generator),
-            epoch=2,
-            verbose=1,
+        train_history = self.model.fit_generator(
+            generator=train_generator,
+            steps_per_epoch=len(train_generator),
+            epoch=train_params.epoch,
+            verbose=train_params.verbose,
             callbacks=callbacks,
-            validation_data=self.val_generator,
-            validation_sptes=len(self.val_generator),
+            validation_data=val_generator,
+            validation_sptes=len(val_generator),
             class_weight=weights,
         )
         return train_history
@@ -84,35 +93,21 @@ class TuneModel:
         Build and prepare a model that will be ready for training
 
         Arguments:
-            build_params - dictionary of parameters for model building
+            build_params -
 
         Returns:
 
         """
-        model_dict = {'resnet': ResNet50, 'densenet': DenseNet121}
-
-        # WORK WITH DATA
-        train_gen_params = build_params.datagenerator.train
-        val_gen_param = build_params.datagenerator.val
-        self.train_generator = get_datagen(train_gen_params)
-        self.val_generator = get_datagen(val_gen_param)
-
-        # BUILD ARCHITECTURE
-        base_model = model_dict[self.name]
-        input_tensor = Input(shape=(self.height, self.width, 3))
-        base_model = base_model(input_tensor=input_tensor,
-                                weights=self.weights,
-                                include_top=include_top)
-        self.tuned_model = self.tune_architecture(base_model)
+        # TUNE BASE ARCHITECTURE
+        self.model = self.tune_architecture()
 
         # GET WEIGHT if model has already trained before
         if self.model_trained:
-            self.tuned_model.load_weights(filepath='./checkpoint/{}.hdf5'.format(self.name))
-        for layer in self.tuned_model.layers:
+            self.model.load_weights(filepath='./checkpoint/{}.hdf5'.format(self.name))
+        for layer in self.model.layers:
             layer.set_trainable = True
 
-        # COMPILE
-        self.tuned_model.compile(
+        self.model.compile(
             optimizer=Adam(lr=0.001, decay=0.1),
             loss=binary_corssentropy,
             metrics=['binary_accuracy']
@@ -132,17 +127,23 @@ class TuneModel:
         """
         eval_generator = self.get_datagen(eval_params)
 
-        score, accuracy = self.tuned_model.evaluate_generator(
+        score, accuracy = self.model.evaluate_generator(
             generator=eval_generator,
             steps=len(eval_generator),
-            verbose=1
-        )
+            verbose=1)
+
         print("Loss: ", score)
         print("Accuracy: ", accuracy)
 
-        y_pred = tuned_model.predict_generator(generator=eval_generator,
+        y_pred = self.model.predict_generator(generator=eval_generator,
                                                steps=len(eval_generator))
         mura = Mura(eval_generator.filenames, y_true=eval_generator.classes, y_pred=y_pred)
+
+        metrics = mura.metrics()
+        metrics_by_encounter = mura.metrics_by_encounter()
+        metrics_by_study_type = mura.metrics_by_study_type()
+
+        return metrics, metrics_by_encounter, metrics_by_study_type
 
 
 

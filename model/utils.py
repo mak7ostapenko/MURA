@@ -1,7 +1,9 @@
 from keras.preprocessing.image import ImageDataGenerator
+#import tensorflow as tf
+#from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 
-def get_datagen(params):
+def data_gen(params):
     """
     Create data generator
 
@@ -14,8 +16,8 @@ def get_datagen(params):
     """
     data_gen_param = params.datagen
     gen_param = params.generator
-    data_gen = ImageDataGenerator(**data_gen_param)
-    generator = data_gen.flow_from_directory(**gen_param)
+    data_generator = ImageDataGenerator(**data_gen_param)
+    generator = data_generator.flow_from_directory(**gen_param)
 
     return generator
 
